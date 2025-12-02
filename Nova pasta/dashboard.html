@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Envios WhatsApp - Painel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: rgba(255, 255, 255, 0.04);
+      --card-strong: rgba(255, 255, 255, 0.08);
+      --text: #e8edf7;
+      --muted: #9db0d8;
+      --accent: #5ef0c1;
+      --accent-2: #6ba7ff;
+      --radius: 14px;
+      --shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(94, 240, 193, 0.12), transparent 30%),
+                  radial-gradient(circle at 80% 0%, rgba(107, 167, 255, 0.16), transparent 35%),
+                  linear-gradient(135deg, #090f1a, #0f1729 55%, #0b1324);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px clamp(16px, 4vw, 48px) 48px;
+    }
+    h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 36px); }
+    p.lead { margin: 0 0 24px; color: var(--muted); }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+    .card h3 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+    .metric { font-size: 28px; font-weight: 700; margin: 8px 0 0; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .pill { padding: 6px 10px; border-radius: 999px; font-size: 13px; border: 1px solid rgba(255,255,255,0.08); background: var(--card-strong); color: var(--text); }
+    .actions { margin: 16px 0 24px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button, .btn { border: none; cursor: pointer; border-radius: 12px; padding: 12px 14px; font-weight: 600; font-size: 14px; transition: transform 120ms ease, box-shadow 120ms ease; color: #0a0f1b; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 12px 30px rgba(107, 167, 255, 0.24); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    button:hover, .btn:hover { transform: translateY(-1px); }
+    button.secondary { background: rgba(255,255,255,0.08); color: var(--text); box-shadow: none; }
+    .panel { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 16px; }
+    label { font-size: 14px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input[type="file"] { width: 100%; background: var(--card-strong); border: 1px dashed rgba(255,255,255,0.18); border-radius: 10px; padding: 10px; color: var(--text); cursor: pointer; }
+    pre { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; color: var(--muted); font-size: 13px; overflow-x: auto; }
+    .list { display: grid; gap: 6px; max-height: 220px; overflow: auto; padding-right: 4px; }
+    .badge { font-size: 13px; padding: 6px 10px; border-radius: 10px; background: var(--card-strong); color: var(--text); border: 1px solid rgba(255,255,255,0.06); }
+  </style>
+</head>
+<body>
+  <h1>Envios WhatsApp</h1>
+  <p class="lead">Acompanhe quantos contatos faltam, visualize o historico e gere rapidamente o comando de envio.</p>
+
+  <div class="grid">
+    <div class="card"><h3>Contatos totais</h3><div class="metric" id="total">0</div><div class="muted">Lidos do CSV</div></div>
+    <div class="card"><h3>Nao enviados</h3><div class="metric" id="pending">0</div><div class="muted">Serao disparados</div></div>
+    <div class="card"><h3>Ja enviados</h3><div class="metric" id="sent">0</div><div class="muted">Historico (log + PyWhatKit)</div></div>
+    <div class="card"><h3>Proxima acao</h3><div class="flex" style="margin-top:8px;"><span class="pill" id="cmd-pill">python enviar_whatsapp.py --arquivo dados/clientes.csv</span></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <h3>Arquivos de entrada</h3>
+      <label for="csv">CSV de clientes (coluna numero)</label>
+      <input type="file" id="csv" accept=".csv" />
+      <label for="log" style="margin-top:12px;">logs/enviados.jsonl (opcional)</label>
+      <input type="file" id="log" accept=".jsonl,.txt" />
+      <label for="db" style="margin-top:12px;">PyWhatKit_DB.txt (opcional)</label>
+      <input type="file" id="db" accept=".txt" />
+      <div class="actions">
+        <button id="analisar">Carregar & Analisar</button>
+        <button class="secondary" id="ignorarDb">Ignorar PyWhatKit</button>
+      </div>
+      <pre id="cmd">python enviar_whatsapp.py --arquivo dados/clientes.csv --espera 12 --intervalo 8</pre>
+    </div>
+
+    <div class="card">
+      <h3>Status dos envios</h3>
+      <canvas id="chart" height="200"></canvas>
+      <div class="flex" style="margin-top:10px;">
+        <span class="badge">Pendentes: <span id="badge-pending">0</span></span>
+        <span class="badge">Enviados: <span id="badge-sent">0</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Nao enviados</h3>
+      <div class="list" id="list-pending"></div>
+    </div>
+  </div>
+
+  <script>
+    const ids = (id) => document.getElementById(id);
+    const state = { numeros: [], enviados: new Set(), enviadosPy: new Set(), ignorarPy: false };
+    let chart;
+
+    function normalizar(numero) {
+      const digitos = (numero || "").replace(/\D+/g, "");
+      if (!digitos) return "";
+      if (digitos.startsWith("00")) return "+" + digitos.slice(2);
+      if (numero.trim().startsWith("+")) return "+" + digitos;
+      if (digitos.startsWith("55")) return "+" + digitos;
+      if (digitos.length === 11) return "+55" + digitos;
+      return "+" + digitos;
+    }
+
+    async function lerCsv(file) {
+      const text = await file.text();
+      const linhas = text.split(/?
+/).filter(Boolean);
+      const header = linhas[0].toLowerCase();
+      const colNumero = header.includes("numero");
+      const numeros = [];
+      for (let i = 1; i < linhas.length; i++) {
+        const raw = colNumero ? linhas[i].split(",")[0] : linhas[i];
+        const n = normalizar(raw);
+        if (n) numeros.push(n);
+      }
+      return numeros;
+    }
+
+    async function lerLog(file) {
+      const text = await file.text();
+      const enviados = new Set();
+      text.split(/?
+/).forEach((line) => {
+        try { const rec = JSON.parse(line); if (rec.numero) enviados.add(rec.numero); } catch (e) {}
+      });
+      return enviados;
+    }
+
+    async function lerDb(file) {
+      const text = await file.text();
+      const enviados = new Set();
+      text.split(/?
+/).forEach((line) => {
+        if (line.startsWith("Phone Number:")) {
+          const num = line.split(":")[1].trim();
+          if (num) enviados.add(num);
+        }
+      });
+      return enviados;
+    }
+
+    function atualizar() {
+      const enviados = state.enviados;
+      const enviadosPy = state.ignorarPy ? new Set() : state.enviadosPy;
+      const enviadosUnificados = new Set([...enviados, ...enviadosPy]);
+      const pendentes = state.numeros.filter((n) => !enviadosUnificados.has(n));
+
+      ids("total").textContent = state.numeros.length;
+      ids("sent").textContent = enviadosUnificados.size;
+      ids("pending").textContent = pendentes.length;
+      ids("badge-sent").textContent = enviadosUnificados.size;
+      ids("badge-pending").textContent = pendentes.length;
+
+      ids("list-pending").innerHTML = pendentes
+        .slice(0, 200)
+        .map((n) => `<div class="badge">${n}</div>`)
+        .join("");
+
+      const cmdBase = `python enviar_whatsapp.py --arquivo dados/clientes.csv`;
+      const extras = state.ignorarPy ? " --ignorar-pywhatkit" : "";
+      ids("cmd").textContent = cmdBase + extras;
+      ids("cmd-pill").textContent = cmdBase + extras;
+
+      const data = [pendentes.length, enviadosUnificados.size];
+      const ctx = ids("chart").getContext("2d");
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "doughnut",
+        data: { labels: ["Pendentes", "Enviados"], datasets: [{ data, backgroundColor: ["#5ef0c1", "#6ba7ff"], borderColor: "transparent" }] },
+        options: { cutout: "65%", plugins: { legend: { labels: { color: "#dfe7ff" } } } },
+      });
+    }
+
+    ids("analisar").onclick = async () => {
+      const csvFile = ids("csv").files[0];
+      if (!csvFile) return alert("Selecione o CSV de clientes.");
+      state.numeros = Array.from(new Set(await lerCsv(csvFile)));
+
+      state.enviados = new Set();
+      const logFile = ids("log").files[0];
+      if (logFile) state.enviados = await lerLog(logFile);
+
+      state.enviadosPy = new Set();
+      const dbFile = ids("db").files[0];
+      if (dbFile) state.enviadosPy = await lerDb(dbFile);
+
+      atualizar();
+    };
+
+    ids("ignorarDb").onclick = () => {
+      state.ignorarPy = !state.ignorarPy;
+      ids("ignorarDb").textContent = state.ignorarPy ? "Usar PyWhatKit" : "Ignorar PyWhatKit";
+      atualizar();
+    };
+
+    atualizar();
+  </script>
+</body>
+</html>

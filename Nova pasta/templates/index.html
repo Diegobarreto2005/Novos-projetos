@@ -1,0 +1,291 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Envios WhatsApp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0c0f1a;
+      --card: rgba(255, 255, 255, 0.04);
+      --card-strong: rgba(255, 255, 255, 0.08);
+      --text: #ecf1ff;
+      --muted: #9eaccc;
+      --accent: #4ff1c6;
+      --accent-2: #6b8bff;
+      --radius: 14px;
+      --shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      background: radial-gradient(circle at 15% 25%, rgba(79, 241, 198, 0.12), transparent 28%),
+                  radial-gradient(circle at 80% 5%, rgba(107, 139, 255, 0.12), transparent 30%),
+                  linear-gradient(135deg, #0b1324, #0c0f1a 55%, #0b1221);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px clamp(16px, 4vw, 48px) 48px;
+    }
+    h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 36px); }
+    p.lead { margin: 0 0 18px; color: var(--muted); max-width: 720px; }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); backdrop-filter: blur(4px); }
+    .card h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+    label { font-size: 14px; color: var(--muted); display: block; margin: 10px 0 6px; }
+    input, textarea { width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: var(--card-strong); color: var(--text); padding: 10px; font-family: inherit; font-size: 14px; }
+    textarea { min-height: 120px; resize: vertical; }
+    input[type="number"] { max-width: 120px; }
+    input[type="file"] { padding: 12px; cursor: pointer; border-style: dashed; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .btn { cursor: pointer; border: none; border-radius: 12px; padding: 12px 14px; font-weight: 700; font-size: 14px; color: #0b1221; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 14px 30px rgba(107, 139, 255, 0.25); transition: transform 140ms ease, box-shadow 140ms ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.secondary { background: rgba(255,255,255,0.08); color: var(--text); box-shadow: none; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0 10px; }
+    .metric { background: var(--card); border: 1px solid rgba(255,255,255,0.07); padding: 12px; border-radius: 12px; }
+    .metric .value { font-size: 26px; font-weight: 700; }
+    .metric .label { color: var(--muted); font-size: 13px; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: var(--card-strong); border: 1px solid rgba(255,255,255,0.08); color: var(--text); font-size: 13px; }
+    .log { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; min-height: 160px; max-height: 280px; overflow-y: auto; font-size: 13px; color: var(--muted); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 10px; background: var(--card-strong); border: 1px solid rgba(255,255,255,0.08); margin: 3px 3px 0 0; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .muted { color: var(--muted); font-size: 14px; }
+    .footer { margin-top: 16px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Envio WhatsApp via Navegador</h1>
+  <p class="lead">Faça login no WhatsApp Web, cole os números e acompanhe o envio sem sair desta tela. O backend usa o mesmo script local.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Mensagem base</h3>
+      <label for="mensagem">Texto a ser enviado</label>
+      <textarea id="mensagem" placeholder="Digite ou carregue do arquivo mensagens/mensagem_padrao.txt"></textarea>
+      <div class="row" style="margin-top: 10px; gap: 8px;">
+        <button class="btn" id="btnSalvarMensagem">Usar mensagem atual</button>
+        <button class="btn secondary" id="btnCarregarPadrao">Carregar padrao</button>
+        <span class="muted" id="msgStatus"></span>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <label for="espera" style="margin:0;">Espera (s)</label>
+        <input type="number" id="espera" min="5" value="12" />
+        <label for="intervalo" style="margin:0;">Intervalo (s)</label>
+        <input type="number" id="intervalo" min="3" value="8" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Envio de teste</h3>
+      <label for="numero">Numero destino</label>
+      <input id="numero" placeholder="+5511999999999" />
+      <div class="row" style="margin-top: 12px;">
+        <button class="btn" id="btnEnviarUm">Enviar agora</button>
+        <span class="pill" id="infoTempo">espera 12s · intervalo 8s</span>
+      </div>
+      <div class="log" id="logTeste"></div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top: 14px;">
+    <div class="card">
+      <h3>Envio em lote</h3>
+      <label for="numeros">Cole numeros (um por linha)</label>
+      <textarea id="numeros" placeholder="+5511999999999\n+5531999999999"></textarea>
+      <label for="csv">Ou carregue um CSV (coluna numero)</label>
+      <input type="file" id="csv" accept=".csv" />
+      <div class="row" style="margin-top: 8px;">
+        <label style="margin:0;">Opcoes</label>
+        <label class="muted" style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="ignorarLog" /> Ignorar log local
+        </label>
+        <label class="muted" style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="ignorarPy" /> Ignorar PyWhatKit
+        </label>
+      </div>
+      <div class="row" style="margin-top: 10px; gap: 10px;">
+        <button class="btn" id="btnEnviarLote">Disparar lista</button>
+        <span class="pill" id="contador">0 numeros carregados</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="value" id="mTotal">0</div><div class="label">Total lidos</div></div>
+        <div class="metric"><div class="value" id="mInvalidos">0</div><div class="label">Invalidos</div></div>
+        <div class="metric"><div class="value" id="mEnviados">0</div><div class="label">Enviados</div></div>
+        <div class="metric"><div class="value" id="mPulados">0</div><div class="label">Pulados / ja enviados</div></div>
+      </div>
+      <div class="log" id="logLote"></div>
+    </div>
+
+    <div class="card">
+      <h3>Lista carregada</h3>
+      <div id="lista" style="max-height: 420px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <div class="footer">Abra o navegador padrao e deixe o WhatsApp Web autenticado. Cada envio abre uma aba, espera o tempo configurado e fecha automaticamente.</div>
+
+  <script>
+    const ids = (id) => document.getElementById(id);
+    const state = {
+      mensagem: "",
+      csvNumeros: [],
+      manualNumeros: [],
+      invalidos: [],
+      enviados: 0,
+      pulados: 0,
+    };
+
+    const normalizar = (numero) => {
+      const digitos = (numero || "").replace(/\D+/g, "");
+      if (!digitos) return "";
+      if (digitos.startsWith("00")) return "+" + digitos.slice(2);
+      if (numero.trim().startsWith("+")) return "+" + digitos;
+      if (digitos.startsWith("55")) return "+" + digitos;
+      if (digitos.length === 11) return "+55" + digitos;
+      return "+" + digitos;
+    };
+
+    const logLinha = (el, msg, tipo = "info") => {
+      const div = document.createElement("div");
+      div.textContent = msg;
+      if (tipo === "erro") div.style.color = "#ff8d8d";
+      if (tipo === "ok") div.style.color = "#4ff1c6";
+      el.prepend(div);
+    };
+
+    const atualizarLista = () => {
+      const numeros = [...state.manualNumeros, ...state.csvNumeros];
+      const unicos = Array.from(new Set(numeros.map(normalizar))).filter(Boolean);
+      state.invalidos = numeros.filter((n) => !normalizar(n));
+      ids("contador").textContent = `${unicos.length} numeros carregados`;
+      ids("mTotal").textContent = unicos.length;
+      ids("mInvalidos").textContent = state.invalidos.length;
+      ids("lista").innerHTML = unicos.slice(0, 250).map((n) => `<span class="badge"><span class="status-dot"></span>${n}</span>`).join("");
+      return unicos;
+    };
+
+    ids("csv").addEventListener("change", async (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const linhas = text.split(/\r?\n/).filter(Boolean);
+      const header = linhas[0].toLowerCase();
+      const colNumero = header.includes("numero");
+      state.csvNumeros = [];
+      for (let i = 1; i < linhas.length; i++) {
+        const raw = colNumero ? linhas[i].split(",")[0] : linhas[i];
+        if (raw) state.csvNumeros.push(raw.trim());
+      }
+      atualizarLista();
+    });
+
+    ids("numeros").addEventListener("input", (ev) => {
+      state.manualNumeros = ev.target.value.split(/\r?\n/).map((n) => n.trim()).filter(Boolean);
+      atualizarLista();
+    });
+
+    ids("btnCarregarPadrao").onclick = async () => {
+      ids("msgStatus").textContent = "";
+      const res = await fetch("/api/defaults");
+      const data = await res.json();
+      if (data.mensagem_padrao) {
+        ids("mensagem").value = data.mensagem_padrao;
+        ids("espera").value = data.espera;
+        ids("intervalo").value = data.intervalo;
+        ids("msgStatus").textContent = "Mensagem padrao carregada.";
+      } else if (data.erro_mensagem) {
+        ids("msgStatus").textContent = data.erro_mensagem;
+      }
+      atualizarInfoTempo();
+    };
+
+    const atualizarInfoTempo = () => {
+      ids("infoTempo").textContent = `espera ${ids("espera").value}s · intervalo ${ids("intervalo").value}s`;
+    };
+
+    ids("espera").addEventListener("input", atualizarInfoTempo);
+    ids("intervalo").addEventListener("input", atualizarInfoTempo);
+
+    ids("btnSalvarMensagem").onclick = () => {
+      state.mensagem = ids("mensagem").value.trim();
+      ids("msgStatus").textContent = state.mensagem ? "Mensagem atualizada." : "Mensagem vazia.";
+    };
+
+    ids("btnEnviarUm").onclick = async () => {
+      const numero = ids("numero").value.trim();
+      const mensagem = (ids("mensagem").value || "").trim();
+      if (!numero) return alert("Informe um numero");
+      if (!mensagem) return alert("Mensagem vazia");
+      const payload = {
+        numero,
+        mensagem,
+        espera: Number(ids("espera").value),
+        intervalo: Number(ids("intervalo").value),
+      };
+      ids("btnEnviarUm").disabled = true;
+      logLinha(ids("logTeste"), `Enviando para ${numero}...`);
+      try {
+        const res = await fetch("/api/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Falha ao enviar");
+        logLinha(ids("logTeste"), `OK: enviado para ${data.numero}`, "ok");
+      } catch (err) {
+        logLinha(ids("logTeste"), `Erro: ${err.message}`, "erro");
+      } finally {
+        ids("btnEnviarUm").disabled = false;
+      }
+    };
+
+    ids("btnEnviarLote").onclick = async () => {
+      const numeros = atualizarLista();
+      const mensagem = (ids("mensagem").value || "").trim();
+      if (!numeros.length) return alert("Nenhum numero carregado.");
+      if (!mensagem) return alert("Mensagem vazia.");
+      ids("btnEnviarLote").disabled = true;
+      ids("logLote").innerHTML = "";
+      state.enviados = 0;
+      state.pulados = 0;
+      const payload = {
+        numeros,
+        mensagem,
+        espera: Number(ids("espera").value),
+        intervalo: Number(ids("intervalo").value),
+        ignorar_log: ids("ignorarLog").checked,
+        ignorar_pywhatkit: ids("ignorarPy").checked,
+      };
+      logLinha(ids("logLote"), `Iniciando envio para ${numeros.length} contatos...`);
+      try {
+        const res = await fetch("/api/send-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Falha ao processar");
+        data.resultado.enviados.forEach((n) => logLinha(ids("logLote"), `Enviado: ${n}`, "ok"));
+        data.resultado.pulados.forEach((n) => logLinha(ids("logLote"), `Pulado (${n.motivo}): ${n.numero}`));
+        data.resultado.falhas.forEach((n) => logLinha(ids("logLote"), `Erro: ${n.numero} -> ${n.motivo}`, "erro"));
+        ids("mEnviados").textContent = data.resultado.enviados.length;
+        ids("mPulados").textContent = data.resultado.pulados.length;
+        ids("mInvalidos").textContent = data.invalidos.length;
+      } catch (err) {
+        logLinha(ids("logLote"), `Erro: ${err.message}`, "erro");
+      } finally {
+        ids("btnEnviarLote").disabled = false;
+      }
+    };
+
+    window.onload = () => {
+      atualizarInfoTempo();
+      ids("btnCarregarPadrao").click();
+    };
+  </script>
+</body>
+</html>
